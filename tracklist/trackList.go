@@ -1,4 +1,4 @@
-package cassete
+package tracklist
 
 import (
 	"sync"
@@ -12,7 +12,7 @@ type TrackList struct {
 	mutex    sync.RWMutex
 }
 
-func newTrackList() *TrackList {
+func New() *TrackList {
 	return &TrackList{
 		tracks: make([]*track.Track, 0, 1),
 	}

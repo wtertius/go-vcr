@@ -5,11 +5,12 @@ import (
 	"sync"
 
 	"go-vcr/track"
+	"go-vcr/tracklist"
 )
 
 var ErrTrackWasntRecorded = errors.New("Not recorded track can't be recorded to cassete")
 
-type TrackMap map[track.Key]*TrackList
+type TrackMap map[track.Key]*tracklist.TrackList
 
 type Cassete struct {
 	tracks TrackMap
@@ -42,7 +43,7 @@ func (c *Cassete) record(tr *track.Track) error {
 	}
 
 	if _, ok := c.tracks[tr.Key()]; !ok {
-		c.tracks[tr.Key()] = newTrackList()
+		c.tracks[tr.Key()] = tracklist.New()
 	}
 
 	c.tracks[tr.Key()].Append(tr)
