@@ -1,6 +1,7 @@
 package track_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,6 +9,7 @@ import (
 	"go-vcr/track"
 )
 
+var emptyFn = func() {}
 var emptyArgs = []interface{}{}
 var emptyResults = []interface{}{}
 
@@ -65,9 +67,7 @@ func TestFnIsCalled(t *testing.T) {
 	})
 	t.Run("Call succeeds", func(t *testing.T) {
 		t.Run("Empty func", func(t *testing.T) {
-			fn := func() {}
-
-			tr := track.New().Call(fn)
+			tr := track.New().Call(emptyFn)
 
 			err := tr.Record()
 			assert.Nil(t, err)
@@ -106,9 +106,7 @@ func TestFnIsCalled(t *testing.T) {
 func TestTrackPlayback(t *testing.T) {
 	t.Run("Record succeeds", func(t *testing.T) {
 		t.Run("Playback not recorded track", func(t *testing.T) {
-			fn := func() {}
-
-			tr := track.New().Call(fn)
+			tr := track.New().Call(emptyFn)
 
 			err := tr.Playback()
 
@@ -136,9 +134,7 @@ func TestTrackPlayback(t *testing.T) {
 
 func TestTrackRecord(t *testing.T) {
 	t.Run("Rewriting is prohibited", func(t *testing.T) {
-		fn := func() {}
-
-		tr := track.New().Call(fn)
+		tr := track.New().Call(emptyFn)
 
 		err := tr.Record()
 		assert.Nil(t, err)
@@ -146,5 +142,36 @@ func TestTrackRecord(t *testing.T) {
 		err = tr.Record()
 		assert.NotNil(t, err)
 		assert.Equal(t, track.ErrTrackRewritingProhibited, err)
+	})
+}
+
+func TestTrackIsRecorded(t *testing.T) {
+	t.Run("New track IsRecorded=false", func(t *testing.T) {
+		tr := track.New()
+		assert.Equal(t, false, tr.IsRecorded())
+	})
+	t.Run("Recorded track IsRecorded=true", func(t *testing.T) {
+		tr := track.New().Call(emptyFn)
+		tr.Record()
+		assert.Equal(t, true, tr.IsRecorded())
+	})
+}
+
+func TestTrackKey(t *testing.T) {
+	t.Run("Key is", func(t *testing.T) {
+		t.Run("Empty string for new track", func(t *testing.T) {
+			tr := track.New()
+			assert.Equal(t, track.Key(""), tr.Key())
+		})
+		t.Run("Function signature for track calling fn", func(t *testing.T) {
+			tr := track.New().Call(emptyFn)
+			assert.Equal(t, track.Key("func()"), tr.Key())
+		})
+		t.Run("Function signature + arg values for track calling fn with args", func(t *testing.T) {
+			argStr := "hey girl"
+			argInt := 5
+			tr := track.New().Call(func(string, int) {}).With(argStr, argInt)
+			assert.Equal(t, track.Key(fmt.Sprintf(`func(string, int)["%s",%d]`, argStr, argInt)), tr.Key())
+		})
 	})
 }

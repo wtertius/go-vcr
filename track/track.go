@@ -1,6 +1,7 @@
 package track
 
 import (
+	"encoding/json"
 	"errors"
 	"reflect"
 	"time"
@@ -21,10 +22,31 @@ type Track struct {
 	duration   time.Duration
 }
 
+type Key string
+
+const KeyEmpty = Key("")
+
 type typeF interface{}
 
 func New() *Track {
 	return new(Track)
+}
+
+func (track *Track) Key() Key {
+	key := Key("")
+	if track.fn != nil {
+		key += Key(reflect.TypeOf(track.fn).String())
+	}
+	if track.args != nil {
+		key += Key(track.argsJSON())
+	}
+
+	return key
+}
+
+func (track *Track) argsJSON() string {
+	argsJSON, _ := json.Marshal(track.args)
+	return string(argsJSON)
 }
 
 func (track *Track) Call(fn typeF) *Track {
