@@ -73,6 +73,11 @@ func (track *Track) Playback(results ...interface{}) error {
 		return ErrTrackWasntRecorded
 	}
 
+	err := track.checkResults(track.results)
+	if err != nil {
+		return err
+	}
+
 	track.setResults(results)
 
 	return nil

@@ -9,16 +9,16 @@ import (
 
 var ErrTrackWasntRecorded = errors.New("Not recorded track can't be recorded to cassete")
 
-type Tracks map[track.Key][]*track.Track
+type TrackMap map[track.Key]*TrackList
 
 type Cassete struct {
-	tracks Tracks
+	tracks TrackMap
 	mutex  sync.RWMutex
 }
 
 func New() *Cassete {
 	return &Cassete{
-		tracks: make(Tracks),
+		tracks: make(TrackMap),
 	}
 }
 
@@ -42,10 +42,10 @@ func (c *Cassete) record(tr *track.Track) error {
 	}
 
 	if _, ok := c.tracks[tr.Key()]; !ok {
-		c.tracks[tr.Key()] = make([]*track.Track, 0, 1)
+		c.tracks[tr.Key()] = newTrackList()
 	}
 
-	c.tracks[tr.Key()] = append(c.tracks[tr.Key()], tr)
+	c.tracks[tr.Key()].Append(tr)
 
 	return nil
 }
@@ -56,8 +56,16 @@ func (c *Cassete) Length() int {
 
 	length := 0
 	for _, trackList := range c.tracks {
-		length += len(trackList)
+		length += trackList.Length()
 	}
 
 	return length
+}
+
+func (c *Cassete) Next(key track.Key) *track.Track {
+	if trackList, ok := c.tracks[key]; ok {
+		return trackList.Next()
+	}
+
+	return nil
 }
