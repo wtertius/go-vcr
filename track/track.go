@@ -68,12 +68,12 @@ func (track *Track) IsRecorded() bool {
 	return track.isRecorded
 }
 
-func (track *Track) Playback() error {
+func (track *Track) Playback(results ...interface{}) error {
 	if !track.IsRecorded() {
 		return ErrTrackWasntRecorded
 	}
 
-	track.setResults()
+	track.setResults(results)
 
 	return nil
 }
@@ -104,12 +104,12 @@ func (track *Track) do() {
 	track.out = reflect.ValueOf(track.fn).Call(in)
 	track.isRecorded = true
 
-	track.setResults()
+	track.setResults(track.results)
 }
 
-func (track *Track) setResults() {
+func (track *Track) setResults(results []interface{}) {
 	for i := range track.out {
-		reflect.ValueOf(track.results[i]).Elem().Set(track.out[i])
+		reflect.ValueOf(results[i]).Elem().Set(track.out[i])
 	}
 }
 
@@ -130,8 +130,19 @@ func (track *Track) CheckFn() error {
 		}
 	}
 
+	err := track.checkResults(track.results)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (track *Track) checkResults(results []interface{}) error {
+	t := reflect.TypeOf(track.fn)
+
 	for i := 0; i < t.NumOut(); i++ {
-		if t.Out(i).String() != reflect.TypeOf(track.results[i]).Elem().String() {
+		if t.Out(i).String() != reflect.TypeOf(results[i]).Elem().String() {
 			return ErrWrongFuncSignature
 		}
 	}

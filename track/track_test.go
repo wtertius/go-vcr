@@ -114,20 +114,24 @@ func TestTrackPlayback(t *testing.T) {
 			assert.Equal(t, track.ErrTrackWasntRecorded, err)
 		})
 		t.Run("One argument - one result value", func(t *testing.T) {
+			tr := track.New()
 			argStr := "Hello world"
-			resultStr := ""
 
-			fn := func(argStr string) string { return argStr }
+			{
+				fn := func(argStr string) string { return argStr }
+				resultStr := ""
 
-			tr := track.New().Call(fn).With(argStr).ResultsIn(&resultStr)
+				tr = tr.Call(fn).With(argStr).ResultsIn(&resultStr)
 
-			tr.Record()
+				tr.Record()
+			}
 
-			resultStr = ""
-			err := tr.Playback()
-
-			assert.Nil(t, err)
-			assert.Equal(t, argStr, resultStr)
+			{
+				resultStr := ""
+				err := tr.Playback(&resultStr)
+				assert.Nil(t, err)
+				assert.Equal(t, argStr, resultStr)
+			}
 		})
 	})
 }
