@@ -13,6 +13,7 @@ var ErrTrackWasntRecorded = errors.New("Not recorded track can't be recorded to 
 type TrackMap map[track.Key]*tracklist.TrackList
 
 type Cassete struct {
+	id     uint64
 	tracks TrackMap
 	mutex  sync.RWMutex
 }
@@ -21,6 +22,10 @@ func New() *Cassete {
 	return &Cassete{
 		tracks: make(TrackMap),
 	}
+}
+
+func (c *Cassete) ID() uint64 {
+	return c.id
 }
 
 func (c *Cassete) Record(tracks ...*track.Track) error {
@@ -63,7 +68,7 @@ func (c *Cassete) Length() int {
 	return length
 }
 
-func (c *Cassete) Next(key track.Key) *track.Track {
+func (c *Cassete) GetTrack(key track.Key) *track.Track {
 	if trackList, ok := c.tracks[key]; ok {
 		return trackList.Next()
 	}

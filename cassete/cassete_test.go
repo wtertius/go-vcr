@@ -18,6 +18,12 @@ func TestCassete(t *testing.T) {
 		cas := cassete.New()
 		assert.NotNil(t, cas)
 	})
+	t.Run("Cassete ID generation", func(t *testing.T) {
+		t.Run("Cassete gets ID on creation", func(t *testing.T) {
+			cas := cassete.New()
+			assert.NotEqual(t, 0, cas.ID())
+		})
+	})
 	t.Run("Work with tracks", func(t *testing.T) {
 		trRecorded := track.New().Call(emptyFn).With(emptyArgs...).ResultsIn(emptyResults...)
 		trRecorded.Record()
@@ -66,13 +72,13 @@ func TestCassete(t *testing.T) {
 				})
 			})
 		})
-		t.Run("Next track from cassete", func(t *testing.T) {
+		t.Run("GetTrack from cassete", func(t *testing.T) {
 			t.Run("Nil on not existing track next try", func(t *testing.T) {
 				t.Run("Empty cassete", func(t *testing.T) {
 					cas := cassete.New()
 					tr := track.New()
 
-					trNext := cas.Next(tr.Key())
+					trNext := cas.GetTrack(tr.Key())
 					assert.Nil(t, trNext)
 				})
 				t.Run("No track found", func(t *testing.T) {
@@ -81,26 +87,26 @@ func TestCassete(t *testing.T) {
 
 					key := track.New().Call(func(string) {}).With("hey girl").Key()
 
-					trNext := cas.Next(key)
+					trNext := cas.GetTrack(key)
 					assert.Nil(t, trNext)
 				})
 				t.Run("Can't play twice what was recorded once", func(t *testing.T) {
 					cas := cassete.New()
 					cas.Record(trRecorded)
 
-					trNext := cas.Next(trRecorded.Key())
+					trNext := cas.GetTrack(trRecorded.Key())
 					assert.NotNil(t, trNext)
 
-					trNext = cas.Next(trRecorded.Key())
+					trNext = cas.GetTrack(trRecorded.Key())
 					assert.Nil(t, trNext)
 				})
 			})
-			t.Run("Next successfully", func(t *testing.T) {
+			t.Run("GetTrack successfully", func(t *testing.T) {
 				t.Run("One track", func(t *testing.T) {
 					cas := cassete.New()
 					cas.Record(trRecorded)
 
-					trNext := cas.Next(trRecorded.Key())
+					trNext := cas.GetTrack(trRecorded.Key())
 					assert.Equal(t, trRecorded.Key(), trNext.Key())
 				})
 				t.Run("Two tracks", func(t *testing.T) {
@@ -122,7 +128,7 @@ func TestCassete(t *testing.T) {
 						fn := func() string { return "hey girl" }
 						tr := track.New().Call(fn)
 
-						trNext := cas.Next(tr.Key())
+						trNext := cas.GetTrack(tr.Key())
 						assert.NotNil(t, trNext)
 						assert.Equal(t, tr.Key(), trNext.Key())
 
