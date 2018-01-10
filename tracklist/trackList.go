@@ -9,7 +9,8 @@ import (
 type TrackList struct {
 	tracks   []*track.Track
 	iterator int
-	mutex    sync.RWMutex
+
+	mutex sync.RWMutex
 }
 
 func New() *TrackList {

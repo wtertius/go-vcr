@@ -2,6 +2,7 @@ package track_test
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -177,5 +178,33 @@ func TestTrackKey(t *testing.T) {
 			tr := track.New().Call(func(string, int) {}).With(argStr, argInt)
 			assert.Equal(t, track.Key(fmt.Sprintf(`func(string, int)["%s",%d]`, argStr, argInt)), tr.Key())
 		})
+	})
+}
+
+func TestDumpAndRestore(t *testing.T) {
+	t.Run("Can marshal track to yaml and restore then", func(t *testing.T) {
+		argStr := "Hello world"
+		resultStr := ""
+		fn := func(argStr string) string { return argStr }
+
+		tr := track.New().Call(fn).With(argStr).ResultsIn(&resultStr)
+		tr.Record()
+
+		dump, _ := yaml.Marshal(tr)
+		assert.Contains(t, string(dump), argStr)
+
+		trRestored := track.New().Call(fn).ResultsIn(&resultStr)
+		err := yaml.Unmarshal(dump, trRestored)
+
+		dumpRestored, _ := yaml.Marshal(trRestored)
+
+		assert.Nil(t, err)
+		assert.Equal(t, string(dump), string(dumpRestored))
+
+		resultStr = ""
+
+		err = trRestored.Playback(&resultStr)
+		assert.Nil(t, err)
+		assert.Equal(t, argStr, resultStr)
 	})
 }

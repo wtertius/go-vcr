@@ -1,6 +1,7 @@
 package cassete_test
 
 import (
+	"gopkg.in/yaml.v2"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -137,6 +138,74 @@ func TestCassete(t *testing.T) {
 						assert.Equal(t, "hey "+name, resultStr)
 					}
 				})
+			})
+			t.Run("Can marshal cassete to yaml and restore then", func(t *testing.T) {
+				argStr := "Hello world"
+				resultStr := ""
+				calledCount := 0
+				fn := func(argStr string) string {
+					calledCount++
+					return argStr
+				}
+
+				tr := track.New().Call(fn).With(argStr).ResultsIn(&resultStr)
+				tr.Record()
+
+				cas := cassete.New()
+				cas.Record(tr)
+
+				dump, _ := yaml.Marshal(cas)
+				assert.Contains(t, string(dump), argStr)
+
+				casRestored := cassete.New()
+				err := yaml.Unmarshal(dump, casRestored)
+
+				dumpRestored, _ := yaml.Marshal(casRestored)
+				assert.Nil(t, err)
+				assert.Equal(t, string(dump), string(dumpRestored))
+
+				resultStr = ""
+				err = casRestored.GetTrack(tr.Key()).Playback(&resultStr)
+				assert.Nil(t, err)
+				assert.Equal(t, argStr, resultStr)
+				assert.Equal(t, 1, calledCount)
+			})
+
+			t.Run("Record or playback in dependence on cassete mode", func(t *testing.T) {
+				cas := cassete.New()
+
+				argStr := "Hello world"
+				resultStr := ""
+				calledCount := 0
+				fn := func(argStr string) string {
+					calledCount++
+					return argStr
+				}
+
+				{
+					resultStr = ""
+					tr := track.New().Call(fn).With(argStr).ResultsIn(&resultStr)
+					err := cas.Exec(tr)
+					assert.Nil(t, err)
+					assert.Equal(t, argStr, resultStr)
+					assert.Equal(t, 1, calledCount)
+				}
+
+				dump, _ := yaml.Marshal(cas)
+				assert.Contains(t, string(dump), argStr)
+
+				casRestored := cassete.New()
+				err := yaml.Unmarshal(dump, casRestored)
+				assert.Nil(t, err)
+
+				{
+					resultStr = ""
+					tr := track.New().Call(fn).With(argStr).ResultsIn(&resultStr)
+					err := casRestored.Exec(tr)
+					assert.Nil(t, err)
+					assert.Equal(t, argStr, resultStr)
+					assert.Equal(t, 1, calledCount)
+				}
 			})
 		})
 	})

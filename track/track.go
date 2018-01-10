@@ -64,6 +64,11 @@ func (track *Track) ResultsIn(results ...interface{}) *Track {
 	return track
 }
 
+func (track *Track) ResultsAs(trackSource *Track) *Track {
+	track.results = trackSource.results
+	return track
+}
+
 func (track *Track) IsRecorded() bool {
 	return track.isRecorded
 }
@@ -73,9 +78,11 @@ func (track *Track) Playback(results ...interface{}) error {
 		return ErrTrackWasntRecorded
 	}
 
-	err := track.checkResults(track.results)
-	if err != nil {
-		return err
+	if track.fn != nil {
+		err := track.checkResults(track.results)
+		if err != nil {
+			return err
+		}
 	}
 
 	track.setResults(results)
@@ -113,6 +120,10 @@ func (track *Track) do() {
 }
 
 func (track *Track) setResults(results []interface{}) {
+	if results == nil {
+		results = track.results
+	}
+
 	for i := range track.out {
 		reflect.ValueOf(results[i]).Elem().Set(track.out[i])
 	}
